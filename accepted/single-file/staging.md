@@ -126,7 +126,10 @@ This stage improves on the previous one by providing the ability to statically l
 
  Debugging support is the same as the previous stage.
 
-Native library dependencies that cannot be statically linked will need to be extracted to the disk -- because some operating-systems do not support loading native libraries from memory.
+For native library dependencies, there are two possible scenarios:
+
+- On systems where it's not possible to load them from memory, they'll have to be spilled out to disk, and loaded as usual with the standard method of loading shared libraries.
+- On Linux systems, it's possible to use `memfd_create()` to create an ephemeral file that's backed by an anonymous memory mapping.  If one writes the bundled shared library into that file and pass the ephemeral path (`/proc/self/fd/${FILE_DESCRIPTOR}`) to `dlopen()`, the file library should open as usual.  (Seals may be added with `fnctl()` for good measure.)  This is faster than writing to disk, doesn't require a writable temporary directory, won't leave debris if the program crashes and can't clean up after itself, but won't provide sharing of code/data for multiple invocations of the same program.
 
 ### 5.2 Scenarios
 
